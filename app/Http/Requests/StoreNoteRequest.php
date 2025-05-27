@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class StoreNoteRequest extends FormRequest
 {
@@ -11,6 +12,8 @@ class StoreNoteRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        // Role base auth 
+        //   return Auth::check();
         return true;
     }
 

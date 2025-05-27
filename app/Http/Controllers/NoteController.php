@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\Note;
 use App\Http\Requests\StoreNoteRequest;
 use App\Http\Requests\UpdateNoteRequest;
+use Illuminate\Support\Facades\Auth;
+
 
 class NoteController extends Controller
 {
@@ -24,9 +27,14 @@ class NoteController extends Controller
     }
 
 
-    public function store(StoreNoteRequest $request)
+    public function store(Request $request, StoreNoteRequest $payload)
     {
-        $note = Note::create($request->validated());
+        $validatedData = $payload->validated();
+        $validatedData['user_id'] = $request->user()->id;
+
+
+        // Create the note with the merged data
+        $note = Note::create($validatedData);
         return response()->json(['data' => $note], 201);
     }
 

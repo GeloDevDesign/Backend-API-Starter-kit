@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('notes', function (Blueprint $table) {
             $table->id();
-            $table->string('title',length:100);
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('title', length: 100);
             $table->text('body');
             $table->timestamps();
         });

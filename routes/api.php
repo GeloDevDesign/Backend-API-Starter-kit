@@ -10,4 +10,4 @@ Route::post('/register',[AuthController::class,'register']);
 Route::post('/logout',[AuthController::class,'logout'])->middleware('auth:sanctum');
 
 
-Route::apiResource('note', NoteController::class);
+Route::apiResource('note', NoteController::class)->middleware('auth:sanctum');
