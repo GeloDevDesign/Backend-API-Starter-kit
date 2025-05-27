@@ -12,9 +12,8 @@ class StoreNoteRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Role base auth 
-        //   return Auth::check();
-        return true;
+
+        return auth('sanctum')->check();
     }
 
     /**
