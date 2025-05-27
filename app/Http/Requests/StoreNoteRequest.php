@@ -13,7 +13,7 @@ class StoreNoteRequest extends FormRequest
     public function authorize(): bool
     {
 
-        return auth('sanctum')->check();
+        return Auth::check();
     }
 
     /**
