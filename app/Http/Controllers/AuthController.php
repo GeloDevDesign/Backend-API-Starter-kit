@@ -7,50 +7,87 @@ use Illuminate\Validation\Rules\Password;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
-    //
-
     public function register(Request $request)
     {
         $validatedAttributes = $request->validate([
             'name' => 'required|max:255',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email|unique:users,email',
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
         ]);
 
-        $validatedAttributes['password'] = bcrypt($validatedAttributes['password']);
-        $user =  User::create($validatedAttributes);
+        $validatedAttributes['password'] = Hash::make($validatedAttributes['password']);
+        $user = User::create($validatedAttributes);
 
-        // FOR EMAIL VERIFICATION
+        // Uncomment for email verification
         // event(new Registered($user));
 
-        $token = $user->createToken($user->name);
+        $token = $user->createToken('auth_token');
 
-        // Auth::login($user);
-
-        return [
+        return response()->json([
             'user' => $user,
             'token' => $token->plainTextToken
-        ];
+        ], 201);
     }
 
     public function login(Request $request)
     {
+        // Check rate limit
+
+        $key = 'login.' . $request->ip();
+
+        if ($this->limitAttempts(5, $key, 60)) {
+            $seconds = RateLimiter::availableIn($key);
+            return response()->json([
+                'message' => "Too many attempts. Please try again in $seconds seconds."
+            ], 429);
+        }
+
+
         $validatedAttributes = $request->validate([
-            'email' => 'required|email|exist:users',
-            'password' => ['required', 'confirmed'],
+            'email' => 'required|email',
+            'password' => 'required',
         ]);
 
         $user = User::where('email', $validatedAttributes['email'])->first();
 
-        if (!$user || Hash::check($validatedAttributes['email'] === $user->password)) {
-            return response()->json(['message' => 'The provided credentials are not exist']);
+        if (!$user || !Hash::check($validatedAttributes['password'], $user->password)) {
+            // Increment attempt counter on failed login
+            RateLimiter::hit($key);
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-       return $user->createToken($user->name)->plainTextToken;
+        // Clear rate limiter on successful login
+        RateLimiter::clear($key);
+
+        $token = $user->createToken('auth_token');
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token->plainTextToken
+        ], 200);
     }
 
-    public function logout() {}
+    public function logout(Request $request)
+    {
+        if ($request->user()) {
+            $request->user()->tokens()->delete();
+            return response()->json(['message' => 'Successfully logged out'], 200);
+        }
+
+        return response()->json(['message' => 'Unauthenticated'], 401);
+    }
+
+    protected function limitAttempts(int $attempts, string $key, int  $decayRate)
+    {
+
+        $availableAttempts = RateLimiter::attempt($key, $attempts, function () {}, $decayRate);
+
+        if (!$availableAttempts) {
+            return true;
+        }
+    }
 }
