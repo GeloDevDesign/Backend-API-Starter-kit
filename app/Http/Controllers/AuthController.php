@@ -39,7 +39,7 @@ class AuthController extends Controller
 
         $key = 'login.' . $request->ip();
 
-        if ($this->limitAttempts(5, $key, 60)) {
+        if ($this->limitAttempts(5, $key, 60, 5)) {
             $seconds = RateLimiter::availableIn($key);
             return response()->json([
                 'message' => "Too many attempts. Please try again in $seconds seconds."
@@ -81,10 +81,10 @@ class AuthController extends Controller
         return response()->json(['message' => 'Unauthenticated'], 401);
     }
 
-    protected function limitAttempts(int $attempts, string $key, int  $decayRate)
+    protected function limitAttempts(int $attempts, string $key, int  $decayRate, int $multiplier)
     {
 
-        $availableAttempts = RateLimiter::attempt($key, $attempts, function () {}, $decayRate);
+        $availableAttempts = RateLimiter::attempt($key, $attempts, function () {}, $decayRate * $multiplier);
 
         if (!$availableAttempts) {
             return true;
