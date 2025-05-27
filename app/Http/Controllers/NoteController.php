@@ -12,11 +12,11 @@ use Illuminate\Support\Facades\Auth;
 class NoteController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
 
 
-        $notes  = Note::all();
+        $notes  = Note::where('user_id' , $request->user()->id)->get();
 
         if (count($notes) === 0) {
             return response()->json(['message' => 'No available notes'], 201);
