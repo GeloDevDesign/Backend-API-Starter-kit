@@ -16,9 +16,9 @@ class NoteController extends Controller
     {
 
         $notes = Note::where('user_id', $request->user()->id)
-            ->select('id', 'title', 'body')
+            ->select('id', 'title', 'body','created_at')
             ->get();
-            
+
         if (count($notes) === 0) {
             return response()->json(['message' => 'No available notes'], 201);
         }
