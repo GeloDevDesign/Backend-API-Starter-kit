@@ -15,13 +15,13 @@ class NoteController extends Controller
     public function index(Request $request)
     {
 
-
-        $notes  = Note::where('user_id' , $request->user()->id)->get();
-
+        $notes = Note::where('user_id', $request->user()->id)
+            ->select('id', 'title', 'body')
+            ->get();
+            
         if (count($notes) === 0) {
             return response()->json(['message' => 'No available notes'], 201);
         }
-
 
         return response()->json(['data' => $notes], 200);
     }
@@ -31,7 +31,6 @@ class NoteController extends Controller
     {
         $validatedData = $payload->validated();
 
-        // Create the note with the merged data
         $note = $request->user()->notes()->create($validatedData);
         return response()->json(['data' => $note], 201);
     }
