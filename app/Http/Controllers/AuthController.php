@@ -11,14 +11,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 
-class AuthController extends Controller implements HasMiddleware
+class AuthController extends Controller 
 {
-    public static function middleware()
-    {
-        return [
-            new Middleware('auth:sanctum', except: ['index', 'show'])
-        ];
-    }
+    // public static function middleware()
+    // {
+    //     return [
+    //         new Middleware('auth:sanctum', except: ['index', 'show'])
+    //     ];
+    // }
     
     public function register(Request $request)
     {
