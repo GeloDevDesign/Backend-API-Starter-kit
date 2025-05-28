@@ -36,13 +36,12 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         // Check rate limit
-
         $key = 'login.' . $request->ip();
 
         if ($this->limitAttempts(5, $key, 60, 5)) {
-            $seconds = RateLimiter::availableIn($key);
+
             return response()->json([
-                'message' => "Too many attempts. Please try again in $seconds seconds."
+                'message' => "Too many login attempts. Please try again in {$this->formatRateLimitTime($key)}."
             ], 429);
         }
 
@@ -53,9 +52,10 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email', $validatedAttributes['email'])->first();
+        $password = Hash::check($validatedAttributes['password'], $user->password);
 
-        if (!$user || !Hash::check($validatedAttributes['password'], $user->password)) {
-            // Increment attempt counter on failed login
+
+        if (!$user || !$password) {
             RateLimiter::hit($key);
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
@@ -67,7 +67,7 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $user,
-            'token' => $token->plainTextToken
+            'token' => $token->plainTextToken,
         ], 200);
     }
 
@@ -89,5 +89,22 @@ class AuthController extends Controller
         if (!$availableAttempts) {
             return true;
         }
+    }
+
+    protected function formatRateLimitTime(string $key): string
+    {
+        $seconds = RateLimiter::availableIn($key);
+
+        if ($seconds <= 0) {
+            return 'a moment';
+        }
+
+        $minutes = round($seconds / 60);
+
+        if ($minutes < 1) {
+            return 'less than a minute';
+        }
+
+        return $minutes == 1 ? '1 minute' : "{$minutes} minutes";
     }
 }

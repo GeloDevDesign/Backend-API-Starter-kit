@@ -30,11 +30,9 @@ class NoteController extends Controller
     public function store(Request $request, StoreNoteRequest $payload)
     {
         $validatedData = $payload->validated();
-        $validatedData['user_id'] = $request->user()->id;
-
 
         // Create the note with the merged data
-        $note = Note::create($validatedData);
+        $note = $request->user()->notes()->create($validatedData);
         return response()->json(['data' => $note], 201);
     }
 
