@@ -11,11 +11,14 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 
 // NOTE ROUTES
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('note', NoteController::class)
-        ->middleware('can:modify,note')->only(['show', 'update', 'destroy']);
-
-    Route::apiResource('note', NoteController::class)->only(['index', 'show', 'store']);
+Route::middleware(['auth:sanctum', 'throttle:global'])->prefix('note')->group(function () {
+    
+    Route::apiResource('/', NoteController::class)
+        ->middleware('can:modify,note')
+        ->only(['show', 'update', 'destroy']);
+        
+    Route::apiResource('/', NoteController::class)
+        ->only(['index', 'store']);
 });
 
 

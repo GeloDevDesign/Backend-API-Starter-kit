@@ -46,8 +46,9 @@ return [
     | "expires_at" attribute, but first-party sessions are not affected.
     |
     */
-
-    'expiration' => null,
+    // 7 DAYS TOKEN EXPIRATION
+    // 'expiration' => 60 * 24 * 3,
+    'expiration' => 60 * 24 * 3,
 
     /*
     |--------------------------------------------------------------------------

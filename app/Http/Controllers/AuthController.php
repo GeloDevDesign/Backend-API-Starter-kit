@@ -11,15 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 
-class AuthController extends Controller 
+class AuthController extends Controller
 {
-    // public static function middleware()
-    // {
-    //     return [
-    //         new Middleware('auth:sanctum', except: ['index', 'show'])
-    //     ];
-    // }
-    
+
     public function register(Request $request)
     {
         $validatedAttributes = $request->validate([
@@ -71,8 +65,10 @@ class AuthController extends Controller
 
         // Clear rate limiter on successful login
         RateLimiter::clear($key);
+        $user->tokens()->delete();
 
-        $token = $user->createToken('auth_token');
+
+        $token = $user->createToken('auth_token', ['*'], now()->addWeek());
 
         return response()->json([
             'user' => $user,
@@ -82,12 +78,38 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        if ($request->user()) {
-            $request->user()->tokens()->delete();
-            return response()->json(['message' => 'Successfully logged out'], 200);
+        $request->user()->tokens()->delete();
+        return response()->json(['message' => 'Successfully logged out'], 200);
+    }
+
+    public function refreshToken(Request $request)
+    {
+        $user = $request->user();
+        $currentToken = $user->currentAccessToken();
+
+        // Check if token is expired
+        if (!$currentToken->expires_at || $currentToken->expires_at->isPast()) {
+            return response()->json([
+                'message' => 'Your session has expired. Please log in again.'
+            ], 401);
         }
 
-        return response()->json(['message' => 'Unauthenticated'], 401);
+        // Delete the old token
+        $currentToken->delete();
+
+        // Create new token with shorter lifespan (e.g., 1 hour for access token)
+        $newToken = $user->createToken('auth-token');
+
+        return response()->json([
+            'user' => $user,
+            'token' => $newToken->plainTextToken,
+            'expires_at' => $newToken->accessToken->expires_at
+        ], 200);
+    }
+
+    protected function throttleKey(Request $request): string
+    {
+        return 'login.' . $request->ip();
     }
 
     protected function limitAttempts(int $attempts, string $key, int  $decayRate, int $multiplier)
