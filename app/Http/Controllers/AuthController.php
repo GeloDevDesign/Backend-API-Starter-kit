@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\RateLimiter;
 class AuthController extends Controller
 {
     // Token expiration times (in minutes)
-    protected const ACCESS_TOKEN_EXPIRY = 60;      // 1 hour
+    protected const ACCESS_TOKEN_EXPIRY = 7;      // 1 hour
     protected const REFRESH_TOKEN_EXPIRY = 30;  // 30 days
 
     // Token names
@@ -21,9 +21,9 @@ class AuthController extends Controller
 
     // Rate limiting
     protected const MAX_LOGIN_ATTEMPTS = 5;
-    protected const RATE_LIMIT_DECAY = 60; // 1 minute
+    protected const RATE_LIMIT_DECAY = 5;
 
-    // --- REGISTER --- //
+
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -48,7 +48,7 @@ class AuthController extends Controller
         $token = $user->createToken(
             self::ACCESS_TOKEN_NAME,
             ['*'],
-            now()->addMinutes(self::ACCESS_TOKEN_EXPIRY)
+            now()->addDay(self::ACCESS_TOKEN_EXPIRY)
         );
 
         return response()->json([
@@ -58,7 +58,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // --- LOGIN --- //
+
     public function login(Request $request)
     {
         $throttleKey = 'login.' . $request->ip();
@@ -87,7 +87,7 @@ class AuthController extends Controller
         $token = $user->createToken(
             self::ACCESS_TOKEN_NAME,
             ['*'],
-            now()->addMinutes(self::ACCESS_TOKEN_EXPIRY)
+            now()->addDay(self::ACCESS_TOKEN_EXPIRY)
         );
 
         return response()->json([
@@ -97,7 +97,7 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // --- LOGOUT --- //
+
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
@@ -132,15 +132,13 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // --- HELPER METHODS --- //
-
     // Check if rate-limited
     protected function isRateLimited(string $key): bool
     {
         return RateLimiter::tooManyAttempts(
             $key,
             self::MAX_LOGIN_ATTEMPTS,
-            self::RATE_LIMIT_DECAY
+            round(self::RATE_LIMIT_DECAY * 60)
         );
     }
 
